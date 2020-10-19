@@ -1,17 +1,10 @@
 #include <Arduino.h>
-#include <cstdint>
 #include "PS2Kbd.h"
  
 //http://retired.beyondlogic.org/keyboard/keybrd.htm
 
-PS2Kbd* PS2Kbd::keyboard0Ptr;
-PS2Kbd* PS2Kbd::keyboard1Ptr;
-PS2Kbd* PS2Kbd::keyboard2Ptr;
-PS2Kbd* PS2Kbd::keyboard3Ptr;
-PS2Kbd* PS2Kbd::keyboard4Ptr;
-PS2Kbd* PS2Kbd::keyboard5Ptr;
-PS2Kbd* PS2Kbd::keyboard6Ptr;
-PS2Kbd* PS2Kbd::keyboard7Ptr;
+PS2Kbd* PS2Kbd::keyboardPtr;
+
 
 const char PS2Kbd::chrsNS[]={
     0,    249,  0,    245,  243,  241,  242,  252,  0,    250,  248,  246,  244,  '\t', '`',  0,
@@ -63,6 +56,10 @@ void PS2Kbd::send(uint8_t x) {
     while(digitalRead(clkPin));
     while(!digitalRead(clkPin));
     dirOUT=false;
+}
+
+bool PS2Kbd::isReading(){
+    return reading;
 }
 
 uint8_t PS2Kbd::available() {
@@ -120,6 +117,7 @@ void PS2Kbd::setLeds(uint8_t d) {
 }
 
 void PS2Kbd::interruptHandler() {
+    Serial.println("interrupt");
 static uint32_t prev_ms=0;
 
     if(dirOUT)return;
@@ -127,11 +125,11 @@ static uint32_t prev_ms=0;
     uint32_t now_ms =micros();
     uint32_t time= now_ms - prev_ms;
 
-
+uint8_t data = digitalRead(dataPin);
 if(time > 70){
 	prev_ms = now_ms;
     shift>>=1;
-    shift|=(digitalRead(dataPin)<<10);
+    shift|=(data<<10);
     if(++rc==11){
         rc=0;
         if((shift&0x401)==0x400){
@@ -345,40 +343,9 @@ void PS2Kbd::clearBuffers() {
 void PS2Kbd::begin() {
     pinMode(dataPin,INPUT_PULLUP);
     pinMode(clkPin,INPUT_PULLUP);
-    digitalWrite(dataPin,true);
-    digitalWrite(clkPin,true);
-    if (keyboard0Ptr==nullptr) {
-        keyboard0Ptr = this;
-        attachInterrupt(digitalPinToInterrupt(clkPin), kbdInterrupt0, FALLING);
-    }
-    else if (keyboard1Ptr==nullptr) {
-        keyboard1Ptr = this;
-        attachInterrupt(digitalPinToInterrupt(clkPin), kbdInterrupt1, FALLING);
-    }
-    else if (keyboard2Ptr==nullptr) {
-        keyboard2Ptr = this;
-        attachInterrupt(digitalPinToInterrupt(clkPin), kbdInterrupt2, FALLING);
-    }
-    else if (keyboard3Ptr==nullptr) {
-        keyboard3Ptr = this;
-        attachInterrupt(digitalPinToInterrupt(clkPin), kbdInterrupt3, FALLING);
-    }
-    else if (keyboard4Ptr==nullptr) {
-        keyboard4Ptr = this;
-        attachInterrupt(digitalPinToInterrupt(clkPin), kbdInterrupt4, FALLING);
-    }
-    else if (keyboard5Ptr==nullptr) {
-        keyboard5Ptr = this;
-        attachInterrupt(digitalPinToInterrupt(clkPin), kbdInterrupt5, FALLING);
-    }
-    else if (keyboard6Ptr==nullptr) {
-        keyboard6Ptr = this;
-        attachInterrupt(digitalPinToInterrupt(clkPin), kbdInterrupt6, FALLING);
-    }
-    else if (keyboard7Ptr==nullptr) {
-        keyboard7Ptr = this;
-        attachInterrupt(digitalPinToInterrupt(clkPin), kbdInterrupt7, FALLING);
-    }
+    keyboardPtr = this;
+    attachInterrupt(digitalPinToInterrupt(clkPin), kbdInterrupt, FALLING);
+    reading = true;
 }
 
 PS2Kbd::PS2Kbd(uint8_t dataPin, uint8_t clkPin)
@@ -403,29 +370,8 @@ PS2Kbd::PS2Kbd(uint8_t dataPin, uint8_t clkPin)
 
 {}
 
-void PS2Kbd::kbdInterrupt0() {
-    keyboard0Ptr->interruptHandler();
-}
-void PS2Kbd::kbdInterrupt1() {
-    keyboard1Ptr->interruptHandler();
-}
-void PS2Kbd::kbdInterrupt2() {
-    keyboard2Ptr->interruptHandler();
-}
-void PS2Kbd::kbdInterrupt3() {
-    keyboard3Ptr->interruptHandler();
-}
-void PS2Kbd::kbdInterrupt4() {
-   keyboard4Ptr->interruptHandler();
-}
-void PS2Kbd::kbdInterrupt5() {
-    keyboard5Ptr->interruptHandler();
-}
-void PS2Kbd::kbdInterrupt6() {
-    keyboard6Ptr->interruptHandler();
-}
-void PS2Kbd::kbdInterrupt7() {
-    keyboard7Ptr->interruptHandler();
+void PS2Kbd::kbdInterrupt() {
+    keyboardPtr->interruptHandler();
 }
 
 PS2Kbd::~PS2Kbd() {

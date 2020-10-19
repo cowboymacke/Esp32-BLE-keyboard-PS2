@@ -16,14 +16,8 @@
 //template<int charBufferSize = 256, int scancodeBufferSize = 256>
 class PS2Kbd {
     private:
-        static PS2Kbd* keyboard0Ptr;
-        static PS2Kbd* keyboard1Ptr;
-        static PS2Kbd* keyboard2Ptr;
-        static PS2Kbd* keyboard3Ptr;
-        static PS2Kbd* keyboard4Ptr;
-        static PS2Kbd* keyboard5Ptr;
-        static PS2Kbd* keyboard6Ptr;
-        static PS2Kbd* keyboard7Ptr;
+        static PS2Kbd* keyboardPtr;
+        bool reading;
         int clkPin;
         int dataPin;
         volatile uint16_t shift;
@@ -54,20 +48,15 @@ class PS2Kbd {
         void tryUpdateLEDs();
         void setLeds(uint8_t);
         void send(uint8_t);
-        static void kbdInterrupt0();
-        static void kbdInterrupt1();
-        static void kbdInterrupt2();
-        static void kbdInterrupt3();
-        static void kbdInterrupt4();
-        static void kbdInterrupt5();
-        static void kbdInterrupt6();
-        static void kbdInterrupt7();
+        static void kbdInterrupt();
+
         void bufferWriteScancode(uint8_t);
         void bufferWriteChar(char);
     public:
         PS2Kbd(uint8_t, uint8_t);
         ~PS2Kbd();
         void begin();
+        bool isReading();
         void interruptHandler();
         unsigned char read();
         uint8_t available();
